@@ -1,0 +1,95 @@
+﻿@inherits OwningComponentBase
+@using IDHLDeveloperTest.Services;
+@page "/character/{characterId}"
+@layout MainLayout
+
+<PageTitle></PageTitle>
+
+<div class="contentContainer">
+    @if (string.IsNullOrEmpty(CharacterId))
+    {
+        <h1>Unable to find character with the Id of @CharacterId</h1>
+    }
+    else
+    {
+        <h1>@CharacterInfo.Name</h1>
+        <div class="characterContainer">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Films</th>
+                        <th>TV Shows</th>
+                        <th>Video Games</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            @if (CharacterInfo.Films.Count() == 0 && CharacterInfo.ShortFilms.Count() == 0)
+                            {
+                                <p><strong>Character doesn't appear in any films or short films.</strong></p>
+                            }
+                            else
+                            {
+                                <ul>
+                                    @foreach (var film in CharacterInfo.Films.Concat(CharacterInfo.ShortFilms))
+                                    {
+                                        <li>@film</li>
+                                    }
+                                </ul>
+                            }
+                        </td>
+                        <td>
+                            @if (CharacterInfo.TvShows.Count() == 0) //Join films and short films together
+                            {
+                                <p><strong>Character does not appear in any TV shows.</strong></p>
+                            }
+                            else
+                            {
+                                <ul>
+                                    @foreach (var show in CharacterInfo.TvShows)
+                                    {
+                                        <li>@show</li>
+                                    }
+                                </ul>
+                            }
+                        </td>
+                        <td>
+                            @if (CharacterInfo.VideoGames.Count() == 0)
+                            {
+                                <p><strong>Character does not appear in any video games.</strong></p>
+                            }
+                            else
+                            {
+                                <ul>
+                                    @foreach (var game in CharacterInfo.VideoGames)
+                                    {
+                                        <li>@game</li>
+                                    }
+                                </ul>
+                            }
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <img src="@CharacterInfo.ImageUrl" />
+        </div>
+
+        <a href="/">Return to characters page</a>
+    }
+
+</div>
+
+@code {
+    [Parameter]
+    public string CharacterId { get; set; }
+
+    protected IClientService clientService;
+    public IDHLDeveloperTest.Models.Character CharacterInfo { get; set; } = new IDHLDeveloperTest.Models.Character();
+
+    protected override async Task OnInitializedAsync()
+    {
+        clientService = (IClientService)ScopedServices.GetService(typeof(IClientService));
+        CharacterInfo = await clientService.GetCharacter(Convert.ToInt32(CharacterId));
+    }
+}

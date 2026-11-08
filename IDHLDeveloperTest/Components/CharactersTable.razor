@@ -1,0 +1,88 @@
+﻿@inherits OwningComponentBase
+@using IDHLDeveloperTest.Models;
+@using IDHLDeveloperTest.Services;
+
+<h3>All Characters</h3>
+
+<input type="text" value="@SearchParam" @oninput="FilteredResult" placeholder="Search for..." />
+<div>
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Id</th>
+                <th scope="col">Name</th>
+                <th scope="col">Image</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (characterList.Data.Count == 0)
+            {
+                <tr>
+                    <td colspan="3">No characters found.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var character in characterList.Data)
+                {
+                    <tr>
+                        <td>@character.Id</td>
+                        <td><a href="/character/@character.Id">@character.Name</a></td>
+                        <td><img src="@character.ImageUrl" /></td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+    <div class="buttons">
+        <button @onclick="PreviousPage" disabled="@(PageNumber == 1 || Loading)">
+            @if(Loading)
+            {
+                <span>Loading...</span>
+            }
+            else
+            {
+                <span>Previous</span>
+            }
+        </button>
+        <button @onclick="NextPage" disabled="@(characterList.Data.Count == 0 || PageNumber == characterList.Info.TotalPages || Loading)">
+            @if (Loading)
+            {
+                <span>Loading...</span>
+            }
+            else
+            {
+                <span>Next</span>
+            }
+        </button>
+    </div>
+</div>
+
+@code {
+    protected IClientService clientService;
+    private CharacterList characterList = new CharacterList();
+    public int PageNumber { get; set; } = 1;
+    public string SearchParam { get; set; } = string.Empty;
+    public bool Loading { get; set; } = false;
+
+    protected override async Task OnInitializedAsync() => await FetchData(PageNumber, SearchParam);
+
+    public async Task NextPage() => await FetchData(PageNumber += 1, SearchParam);
+
+    public async Task PreviousPage() => await FetchData(PageNumber -= 1, SearchParam);
+
+    private async Task FilteredResult(ChangeEventArgs e)
+    {
+        SearchParam = e.Value.ToString() ?? string.Empty;
+        PageNumber = 1;
+        await FetchData(PageNumber, SearchParam);
+    }
+
+    protected async Task FetchData(int pageNumber, string searchParam)
+    {
+        Loading = true;
+        clientService = (IClientService)ScopedServices.GetService(typeof(IClientService));
+        characterList = await clientService.GetCharacters(pageNumber, searchParam);
+        Loading = false;
+    }
+}
